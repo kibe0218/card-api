@@ -1,15 +1,15 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"log"
-	"net/http"
-	"time"
+	"context"       //処理のキャンセル・タイムアウトを司る
+	"encoding/json" //Encode/Decodeのため
+	"log"           //logを出力
+	"net/http"      //HTTPサーバやクライアントの機能を使うため
+	"time"          //現在時刻を取得
 
-	"cloud.google.com/go/firestore"
-	firebase "firebase.google.com/go"
-	"google.golang.org/api/option"
+	"cloud.google.com/go/firestore"   //firestoreにアクセスするための公式ライブラリ
+	firebase "firebase.google.com/go" //firebase全体を使うためのパッケージ
+	"google.golang.org/api/option"    //認証キーなどの設定を渡すときに使う
 )
 
 type Card struct {
@@ -58,6 +58,13 @@ func cardsHandler(w http.ResponseWriter, r *http.Request) { //rは受け取る�
 
 func getCards(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background() //処理用のコンテキスト情報を入れる箱を作っている
+
+	listID := r.URL.Query().Get("listId")
+	if listID == "" {
+		http.Error(w, "listIdを指定してね", http.StatusBadRequest)
+		return
+	}
+
 	userID := r.URL.Query().Get("userId")
 	//URLから.Queryでクエリを解析、解析するのはURLの？yserId=以降、それをuserIDに代入
 	if userID == "" {
@@ -65,7 +72,12 @@ func getCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	iter := firestoreClient.Collection("users").Doc(userID).Collection("cards").Documents(ctx)
+	iter := firestoreClient.Collection("users").
+		Doc(userID).
+		Collection("lists").
+		Doc(listID).
+		Collection("cards").
+		Documents(ctx)
 	//usersコレクションのuserIDに対応するcardsというドキュメントを指定
 	//Firestoreのドキュメントを順番に読み取るイテレーター
 	defer iter.Stop() //.Stopで上で作ったイテレーターを削除,deferにより関数終了時に自動実行
@@ -90,8 +102,9 @@ func getCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(cards)
+	w.Header().Set("Content-Type", "application/json") //httpレスポンスのヘッダーに返すデータの種類を教えている
+	json.NewEncoder(w).Encode(cards)                   //jsonデータを書き込んで送信
+	//EncodeはGoの構造体をJSONに変換して返す
 }
 
 func addCard(w http.ResponseWriter, r *http.Request) {
@@ -103,13 +116,15 @@ func addCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var newCard Card
-	if err := json.NewDecoder(r.Body).Decode(&newCard); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&newCard); err != nil { //r.Bodyはクライアントがhttpリクエストの本文に送ってきたデータ
+		//Decodeは受け取ったJSONデータをGoの構造体に変換する処理
 		http.Error(w, "JSONの形式が正しくないっピ", http.StatusBadRequest)
 		return
 	}
 	newCard.CreatedAt = time.Now()
 
 	_, _, err := firestoreClient.Collection("users").Doc(userID).Collection("cards").Add(ctx, newCard)
+	//追加されたドキュメントの参照情報はいらないから無視してる
 	if err != nil {
 		http.Error(w, "Firestoreへの追加失敗っピ", http.StatusInternalServerError)
 		return
@@ -117,6 +132,7 @@ func addCard(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"message": "カード追加完了っピ"})
+	//キーも値もstringの辞書型を作る
 }
 
 func main() {
