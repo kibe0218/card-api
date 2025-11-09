@@ -19,6 +19,11 @@ type Card struct {
 	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
 }
 
+type List struct {
+	Name      string    `firestore:"listname" json:"listname"`
+	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
+}
+
 var firestoreClient *firestore.Client
 
 func initFirebase() {
@@ -41,6 +46,86 @@ func initFirebase() {
 	}
 	firestoreClient = client
 	//上で定義したfirestoreCliantにcliant情報を代入（他の関数でも使えるようにグローバル関数に代入）
+}
+
+func listsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		getLists(w, r)
+	case http.MethodPost:
+		addList(w, r)
+	default:
+		http.Error(w, "許可されていないメソッドっピ", http.StatusMethodNotAllowed)
+	}
+}
+
+func getLists(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	userID := r.URL.Query().Get("userId")
+	if userID == "" {
+		http.Error(w, "userIdを指定してね", http.StatusBadRequest)
+		return
+	}
+
+	iter := firestoreClient.Collection("users").
+		Doc(userID).
+		Collection("lists").
+		Documents(ctx)
+	defer iter.Stop()
+
+	var lists []List
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			break
+		}
+		var l List
+		if err := doc.DataTo(&l); err != nil {
+			continue
+		}
+		lists = append(lists, l)
+	}
+
+	if len(lists) == 0 {
+		http.Error(w, "リストが見つからないっピ", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(lists)
+}
+
+func addList(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	userID := r.URL.Query().Get("userId")
+	if userID == "" {
+		http.Error(w, "userIdを指定してね", http.StatusBadRequest)
+		return
+	}
+
+	var newList List
+	if err := json.NewDecoder(r.Body).Decode(&newList); err != nil {
+		http.Error(w, "JSONの形式が正しくないっピ", http.StatusBadRequest)
+		return
+	}
+
+	if newList.Name == "" {
+		newList.Name = "新しいリスト"
+	}
+	newList.CreatedAt = time.Now()
+
+	// Firestoreのlistsコレクションに新しいドキュメントを追加
+	_, _, err := firestoreClient.Collection("users").
+		Doc(userID).
+		Collection("lists").
+		Add(ctx, newList)
+	if err != nil {
+		http.Error(w, "リスト追加失敗っピ", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "リスト追加完了っピ"})
 }
 
 func cardsHandler(w http.ResponseWriter, r *http.Request) { //rは受け取るものwは返すもの
@@ -80,6 +165,7 @@ func getCards(w http.ResponseWriter, r *http.Request) {
 		Documents(ctx)
 	//usersコレクションのuserIDに対応するcardsというドキュメントを指定
 	//Firestoreのドキュメントを順番に読み取るイテレーター
+	//ctxでGoの並行処理でキャンセルやタイムアウトを伝える
 	defer iter.Stop() //.Stopで上で作ったイテレーターを削除,deferにより関数終了時に自動実行
 
 	var cards []Card
@@ -109,6 +195,12 @@ func getCards(w http.ResponseWriter, r *http.Request) {
 
 func addCard(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
+
+	listID := r.URL.Query().Get("listId")
+	if listID == "" {
+		http.Error(w, "listIdを指定してね", http.StatusBadRequest)
+	}
+
 	userID := r.URL.Query().Get("userId")
 	if userID == "" {
 		http.Error(w, "userIdを指定してね", http.StatusBadRequest)
@@ -123,8 +215,12 @@ func addCard(w http.ResponseWriter, r *http.Request) {
 	}
 	newCard.CreatedAt = time.Now()
 
-	_, _, err := firestoreClient.Collection("users").Doc(userID).Collection("cards").Add(ctx, newCard)
-	//追加されたドキュメントの参照情報はいらないから無視してる
+	_, _, err := firestoreClient.Collection("users").
+		Doc(userID).
+		Collection("lists").
+		Doc(listID).
+		Collection("cards").
+		Add(ctx, newCard) //追加されたドキュメントの参照情報はいらないから無視してる
 	if err != nil {
 		http.Error(w, "Firestoreへの追加失敗っピ", http.StatusInternalServerError)
 		return
@@ -139,7 +235,8 @@ func main() {
 	initFirebase()                //Firebase初期化
 	defer firestoreClient.Close() //終了時にFirebaseを終わる予約
 
-	http.HandleFunc("/cards", cardsHandler)                //cardsHandlerはrとwの処理を切り替える
+	http.HandleFunc("/cards", cardsHandler) //cardsHandlerはrとwの処理を切り替える
+	http.HandleFunc("/lists", listsHandler)
 	log.Println("Server running on http://localhost:8080") //logはログとして出力を残す
 	log.Fatal(http.ListenAndServe(":8080", nil))
 	//listenandserveでサーバー起動。終了を待ち続けて終わったらlog.Fatalがerrorを読み取りプログラムを強制終了
