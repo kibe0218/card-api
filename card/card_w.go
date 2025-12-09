@@ -1,5 +1,7 @@
 package card
 
+//OK
+
 import (
 	"card-api/firebase"
 	"context"       //処理のキャンセル・タイムアウトを司る
