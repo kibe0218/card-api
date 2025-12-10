@@ -7,6 +7,11 @@ import (
 	"net/http"      //HTTPサーバやクライアントの機能を使うため
 )
 
+type CardResponse struct {
+	ID string `json:"id"`
+	Card
+}
+
 func GetCards(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background() //処理用のコンテキスト情報を入れる箱を作っている
 
@@ -34,7 +39,7 @@ func GetCards(w http.ResponseWriter, r *http.Request) {
 	//ctxでGoの並行処理でキャンセルやタイムアウトを伝える
 	defer iter.Stop() //.Stopで上で作ったイテレーターを削除,deferにより関数終了時に自動実行
 
-	var cards []Card
+	var cards []CardResponse
 	for { //iterから一件ずつドキュメントを取り出す
 		doc, err := iter.Next() //イテレータから次のドキュメントを取り出す,初回は最初のdocを読み取る
 		//docには一件分のドキュメント情報が入る,errは取り出せなかった時のエラー情報が入る
@@ -46,7 +51,10 @@ func GetCards(w http.ResponseWriter, r *http.Request) {
 			//cの構造にdocを変化させて代入
 			continue //errが何か入っていたら次のループに入り、次のイテレーターにとぶ
 		}
-		cards = append(cards, c) //cardsスライスにcを追加したものをcardsに代入
+		cards = append(cards, CardResponse{
+			ID:   doc.Ref.ID,
+			Card: c,
+		})
 	}
 
 	if len(cards) == 0 {

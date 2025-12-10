@@ -14,8 +14,13 @@ func ListsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		GetLists(w, r)
+		return
 	case http.MethodPost:
 		AddList(w, r)
+		return
+	case http.MethodDelete:
+		DeleteList(w, r)
+		return
 	default:
 		http.Error(w, "許可されていないメソッドっピ", http.StatusMethodNotAllowed)
 	}

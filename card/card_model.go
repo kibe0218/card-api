@@ -19,6 +19,9 @@ func CardsHandler(w http.ResponseWriter, r *http.Request) { //rは受け取る�
 	case http.MethodPost: //リクエストのメソッドがPOSTなら・・
 		AddCard(w, r)
 		return
+	case http.MethodDelete:
+		DeleteCard(w, r)
+		return
 	default:
 		http.Error(w, "許可されていないメソッドっピ", http.StatusMethodNotAllowed)
 	}
