@@ -6,7 +6,8 @@ import (
 )
 
 type List struct {
-	Name      string    `firestore:"listname" json:"listname"`
+	ID        string    `firestore:"id" json:"id"`
+	Title     string    `firestore:"title" json:"title"`
 	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
 }
 

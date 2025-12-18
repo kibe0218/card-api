@@ -22,21 +22,26 @@ func AddList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if newList.Name == "" {
-		newList.Name = "新しいリスト"
+	if newList.Title == "" {
+		newList.Title = "新しいリスト"
 	}
 	newList.CreatedAt = time.Now()
 
 	// Firestoreのlistsコレクションに新しいドキュメントを追加
-	_, _, err := firebase.FirestoreClient.Collection("users").
+	newDocRef := firebase.FirestoreClient.Collection("users").
 		Doc(userID).
 		Collection("lists").
-		Add(ctx, newList)
+		NewDoc() // 自分で ID を作る
+	newList.ID = newDocRef.ID
+	_, err := newDocRef.Set(ctx, newList)
 	if err != nil {
 		http.Error(w, "リスト追加失敗っピ", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "リスト追加完了っピ"})
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "リスト追加完了っピ",
+		"id":      newDocRef.ID,
+	})
 }

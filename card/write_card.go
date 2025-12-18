@@ -1,7 +1,5 @@
 package card
 
-//OK
-
 import (
 	"card-api/firebase"
 	"context"       //処理のキャンセル・タイムアウトを司る
@@ -32,18 +30,26 @@ func AddCard(w http.ResponseWriter, r *http.Request) {
 	}
 	newCard.CreatedAt = time.Now()
 
-	_, _, err := firebase.FirestoreClient.Collection("users").
+	// Firestoreのcardsコレクションに新しいドキュメントを追加
+	newDocRef := firebase.FirestoreClient.Collection("users").
 		Doc(userID).
 		Collection("lists").
 		Doc(listID).
 		Collection("cards").
-		Add(ctx, newCard) //追加されたドキュメントの参照情報はいらないから無視してる
+		NewDoc() // 自分で ID を作る
+	newCard.ID = newDocRef.ID
+	newCard.ListID = listID
+	_, err := newDocRef.Set(ctx, newCard)
 	if err != nil {
 		http.Error(w, "Firestoreへの追加失敗っピ", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "カード追加完了っピ"})
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "カード追加完了っピ",
+		"id":      newCard.ID,
+		"listid":  newCard.ListID,
+	})
 	//キーも値もstringの辞書型を作る
 }

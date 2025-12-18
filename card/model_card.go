@@ -6,6 +6,8 @@ import (
 )
 
 type Card struct {
+	ID        string    `firestore:"id" json:"id"`
+	ListID    string    `firestore:"listid" json:"listid"`
 	EN        string    `firestore:"en" json:"en"`
 	JP        string    `firestore:"jp" json:"jp"`
 	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
@@ -18,6 +20,9 @@ func CardsHandler(w http.ResponseWriter, r *http.Request) { //rは受け取る�
 		return //この関数の処理をここで終わらせる
 	case http.MethodPost: //リクエストのメソッドがPOSTなら・・
 		AddCard(w, r)
+		return
+	case http.MethodPut:
+		UpdateCard(w, r)
 		return
 	case http.MethodDelete:
 		DeleteCard(w, r)
