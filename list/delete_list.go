@@ -13,11 +13,15 @@ func DeleteList(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("userId")
 	listID := r.URL.Query().Get("listId")
 
+	// ❌ ここで http.Error はやめる
 	if userID == "" || listID == "" {
-		http.Error(w, "userId / listIdが必要っピ", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "userId / listId が必要っピ",
+		})
 		return
 	}
-
 	_, err := firebase.FirestoreClient.Collection("users").
 		Doc(userID).
 		Collection("lists").
@@ -25,12 +29,18 @@ func DeleteList(w http.ResponseWriter, r *http.Request) {
 		Delete(ctx)
 
 	if err != nil {
-		http.Error(w, "削除に失敗したっピ", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "削除に失敗したっピ",
+		})
 		return
 	}
 
+	// 成功レスポンスも JSON に
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "リスト削除完了っピ",
 	})
-
 }
