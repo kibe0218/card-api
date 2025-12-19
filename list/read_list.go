@@ -26,7 +26,7 @@ func GetLists(w http.ResponseWriter, r *http.Request) {
 		Documents(ctx)
 	defer iter.Stop()
 
-	var lists []ListResponse
+	lists := []ListResponse{}
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -40,15 +40,6 @@ func GetLists(w http.ResponseWriter, r *http.Request) {
 			ID:   doc.Ref.ID,
 			List: l,
 		})
-	}
-
-	if len(lists) == 0 {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "リストが見つからないっピ",
-		})
-		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
