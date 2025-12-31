@@ -1,12 +1,12 @@
 package user
 
-import(
-	"time"
+import (
 	"net/http" //HTTPサーバやクライアントの機能を使うため
+	"time"
 )
 
 type User struct {
-	ID        string    `firestore:"userid" json:"userid"`
+	ID        string    `firestore:"id" json:"id"`
 	Name      string    `firestore:"name" json:"name"`
 	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
 }

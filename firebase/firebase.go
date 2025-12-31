@@ -13,7 +13,6 @@ var FirestoreClient *firestore.Client
 
 func InitFirebase() {
 	opt := option.WithCredentialsFile("serviceAccountKey.json")
-	//別ファイルに保存したキーを読み込む,:=は宣言して代入
 	config := &firebase.Config{ProjectID: "memorize-db-23637"}
 	//firebaseの設定を作る,＆はポインタ（アドレス）を作る演算子
 
