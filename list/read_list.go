@@ -7,6 +7,8 @@ import (
 	"net/http"      //HTTPサーバやクライアントの機能を使うため
 )
 
+//2027
+
 type ListResponse struct {
 	ID string `json:"id"`
 	List
