@@ -14,28 +14,25 @@ type UserResponse struct {
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
+	userId := r.URL.Query().Get("userId")
 
-	iter := firebase.FirestoreClient.Collection("users").
-		Documents(ctx)
-	defer iter.Stop()
-
-	users := []UserResponse{}
-
-	for {
-		doc, err := iter.Next()
+	if userId != "" {
+		doc, err := firebase.FirestoreClient.Collection("users").Doc(userId).Get(ctx)
 		if err != nil {
-			break
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
 		}
 		var u User
 		if err := doc.DataTo(&u); err != nil {
-			continue
+			http.Error(w, "Error decoding user data", http.StatusInternalServerError)
+			return
 		}
-		users = append(users, UserResponse{
+		user := UserResponse{
 			ID:   doc.Ref.ID,
 			User: u,
-		})
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(user)
+		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
 }
