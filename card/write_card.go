@@ -4,11 +4,13 @@ import (
 	"card-api/firebase"
 	"context"       //処理のキャンセル・タイムアウトを司る
 	"encoding/json" //Encode/Decodeのため
-	"net/http"      //HTTPサーバやクライアントの機能を使うため
-	"time"          //現在時刻を取得
+	"log"
+	"net/http" //HTTPサーバやクライアントの機能を使うため
+	"time"     //現在時刻を取得
 )
 
 func AddCard(w http.ResponseWriter, r *http.Request) {
+	log.Println("🟡 addcard入る")
 	ctx := context.Background()
 
 	listID := r.URL.Query().Get("listId")
@@ -21,6 +23,7 @@ func AddCard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "userIdを指定してね", http.StatusBadRequest)
 		return
 	}
+	log.Println("🟡 指定したlistId:", listID)
 
 	var newCard Card
 	if err := json.NewDecoder(r.Body).Decode(&newCard); err != nil { //r.Bodyはクライアントがhttpリクエストの本文に送ってきたデータ

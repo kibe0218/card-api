@@ -4,10 +4,13 @@ import (
 	"card-api/firebase"
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
 func DeleteCard(w http.ResponseWriter, r *http.Request) {
+	log.Println("🟡DeleteCardに入る")
+
 	ctx := context.Background()
 
 	userID := r.URL.Query().Get("userId")

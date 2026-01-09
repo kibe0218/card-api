@@ -25,7 +25,7 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 	log.Println("🟡 raw body:", string(body)) // ←ここでbodyにIDがあるか確認
 
 	// Bodyは一回読むと空になる
-	r.Body = io.NopCloser(bytes.NewBuffer(body))
+	r.Body = io.NopCloser(bytes.NewBuffer(body)) //@gmail.com
 
 	// --- JSON デコード ---
 	var newUser User
@@ -43,7 +43,7 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 	if newUser.ID == "" {
 		log.Println("🟡 デコード後 ID が空っピ")
 		// ここで rawMap を作って確認することも可能
-		var checkMap map[string]interface{}//jsonを受け取るための箱
+		var checkMap map[string]interface{} //jsonを受け取るための箱
 		json.Unmarshal(body, &checkMap)
 		log.Println("🟡 raw body を map にした場合:", checkMap)
 		log.Println("🟡 map 内の id:", checkMap["id"])
