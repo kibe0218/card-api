@@ -47,7 +47,6 @@ func AddUser(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(body, &checkMap)
 		log.Println("🟡 raw body を map にした場合:", checkMap)
 		log.Println("🟡 map 内の id:", checkMap["id"])
-
 		http.Error(w, "IDが空です（id フィールドを送ってください）", http.StatusBadRequest)
 		return
 	}

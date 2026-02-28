@@ -46,7 +46,5 @@ func UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "カード更新完了っピ",
-	})
+	json.NewEncoder(w).Encode(updated)
 }

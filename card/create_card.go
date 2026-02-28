@@ -49,10 +49,6 @@ func AddCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "カード追加完了っピ",
-		"id":      newCard.ID,
-		"listid":  newCard.ListID,
-	})
+	json.NewEncoder(w).Encode(newCard)
 	//キーも値もstringの辞書型を作る
 }

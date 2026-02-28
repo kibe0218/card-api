@@ -2,7 +2,7 @@ package user
 
 import (
 	"card-api/firebase"
-	"context"       //
+	"context"
 	"encoding/json" //Encode/Decodeのため
 	"net/http"      //HTTPサーバやクライアントの機能を使うため
 )
