@@ -9,6 +9,7 @@ type List struct {
 	ID        string    `firestore:"id" json:"id"`
 	Title     string    `firestore:"title" json:"title"`
 	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
+	CardCount int       `firestore:"cardCount" json:"cardCount"`
 }
 
 func ListsHandler(w http.ResponseWriter, r *http.Request) {

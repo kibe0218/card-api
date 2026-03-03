@@ -11,12 +11,18 @@ type Card struct {
 	EN        string    `firestore:"en" json:"en"`
 	JP        string    `firestore:"jp" json:"jp"`
 	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
+	Order     int       `firestore:"order" json:"order"`
 }
 
 func CardsHandler(w http.ResponseWriter, r *http.Request) { //rは受け取るものwは返すもの
 	switch r.Method {
 	case http.MethodGet: //リクエストのメソッドがGETなら・・
-		GetCards(w, r)
+		listID := r.URL.Query().Get("listId")
+		if listID == "" {
+			GetCards(w, r)
+		} else {
+			GetCardsBy(w, r)
+		}
 		return //この関数の処理をここで終わらせる
 	case http.MethodPost: //リクエストのメソッドがPOSTなら・・
 		AddCard(w, r)

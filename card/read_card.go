@@ -5,14 +5,75 @@ import (
 	"context"       //処理のキャンセル・タイムアウトを司る
 	"encoding/json" //Encode/Decodeのため
 	"net/http"      //HTTPサーバやクライアントの機能を使うため
+
+	"google.golang.org/api/iterator"
 )
 
-type CardResponse struct {
-	ID string `json:"id"`
-	Card
+func GetCards(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	userID := r.URL.Query().Get("userId")
+	if userID == "" {
+		http.Error(w, "userIdを指定してね", http.StatusBadRequest)
+		return
+	}
+
+	// ① lists を取得
+	listIter := firebase.FirestoreClient.
+		Collection("users").
+		Doc(userID).
+		Collection("lists").
+		Documents(ctx)
+	defer listIter.Stop()
+
+	var cards []Card
+
+	for {
+		listDoc, err := listIter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		listID := listDoc.Ref.ID
+
+		// ② その list の cards を取得
+		cardIter := firebase.FirestoreClient.
+			Collection("users").
+			Doc(userID).
+			Collection("lists").
+			Doc(listID).
+			Collection("cards").
+			Documents(ctx)
+
+		for {
+			doc, err := cardIter.Next()
+			if err != nil {
+				break
+			}
+
+			var c Card
+			if err := doc.DataTo(&c); err != nil {
+				continue
+			}
+			c.ID = doc.Ref.ID
+			cards = append(cards, c)
+		}
+
+		cardIter.Stop()
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if cards == nil {
+		cards = []Card{}
+	}
+	json.NewEncoder(w).Encode(cards)
 }
 
-func GetCards(w http.ResponseWriter, r *http.Request) {
+func GetCardsBy(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background() //処理用のコンテキスト情報を入れる箱を作っている
 
 	listID := r.URL.Query().Get("listId")
@@ -39,7 +100,7 @@ func GetCards(w http.ResponseWriter, r *http.Request) {
 	//ctxでGoの並行処理でキャンセルやタイムアウトを伝える
 	defer iter.Stop() //.Stopで上で作ったイテレーターを削除,deferにより関数終了時に自動実行
 
-	var cards []CardResponse
+	var cards []Card
 	for { //iterから一件ずつドキュメントを取り出す
 		doc, err := iter.Next() //イテレータから次のドキュメントを取り出す,初回は最初のdocを読み取る
 		//docには一件分のドキュメント情報が入る,errは取り出せなかった時のエラー情報が入る
@@ -51,18 +112,14 @@ func GetCards(w http.ResponseWriter, r *http.Request) {
 			//cの構造にdocを変化させて代入
 			continue //errが何か入っていたら次のループに入り、次のイテレーターにとぶ
 		}
-		cards = append(cards, CardResponse{
-			ID:   doc.Ref.ID,
-			Card: c,
-		})
-	}
-
-	if len(cards) == 0 {
-		http.Error(w, "カードが見つからないっピ", http.StatusNotFound)
-		return
+		c.ID = doc.Ref.ID
+		cards = append(cards, c)
 	}
 
 	w.Header().Set("Content-Type", "application/json") //httpレスポンスのヘッダーに返すデータの種類を教えている
-	json.NewEncoder(w).Encode(cards)                   //jsonデータを書き込んで送信
+	if cards == nil {
+		cards = []Card{}
+	}
+	json.NewEncoder(w).Encode(cards) //jsonデータを書き込んで送信
 	//EncodeはGoの構造体をJSONに変換して返す
 }

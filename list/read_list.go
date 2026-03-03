@@ -7,13 +7,6 @@ import (
 	"net/http"      //HTTPサーバやクライアントの機能を使うため
 )
 
-//2027
-
-type ListResponse struct {
-	ID string `json:"id"`
-	List
-}
-
 func GetLists(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	userID := r.URL.Query().Get("userId")
@@ -28,7 +21,7 @@ func GetLists(w http.ResponseWriter, r *http.Request) {
 		Documents(ctx)
 	defer iter.Stop()
 
-	lists := []ListResponse{}
+	lists := []List{}
 	for {
 		doc, err := iter.Next()
 		if err != nil {
@@ -38,10 +31,7 @@ func GetLists(w http.ResponseWriter, r *http.Request) {
 		if err := doc.DataTo(&l); err != nil {
 			continue
 		}
-		lists = append(lists, ListResponse{
-			ID:   doc.Ref.ID,
-			List: l,
-		})
+		lists = append(lists, l)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

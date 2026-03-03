@@ -26,6 +26,7 @@ func AddList(w http.ResponseWriter, r *http.Request) {
 		newList.Title = "新しいリスト"
 	}
 	newList.CreatedAt = time.Now()
+	newList.CardCount = 0
 
 	// Firestoreのlistsコレクションに新しいドキュメントを追加
 	newDocRef := firebase.FirestoreClient.Collection("users").
