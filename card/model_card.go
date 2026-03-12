@@ -12,6 +12,7 @@ type Card struct {
 	JP        string    `firestore:"jp" json:"jp"`
 	CreatedAt time.Time `firestore:"createdAt" json:"createdAt"`
 	Order     int       `firestore:"order" json:"order"`
+	Mistake   bool      `firestore:"mistake" json:"mistake"`
 }
 
 func CardsHandler(w http.ResponseWriter, r *http.Request) { //rは受け取るものwは返すもの

@@ -53,8 +53,10 @@ func AddCard(w http.ResponseWriter, r *http.Request) {
 		newDocRef := listRef.Collection("cards").NewDoc()
 		newCard.ID = newDocRef.ID
 		newCard.ListID = listID
-		newCard.Order = nextOrder
 		newCard.CreatedAt = time.Now()
+		newCard.Order = nextOrder
+		newCard.Mistake = false
+
 		if err := tx.Update(listRef, []firestore.Update{
 			{Path: "cardCount", Value: nextOrder + 1},
 		}); err != nil {
